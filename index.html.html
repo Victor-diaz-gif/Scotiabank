@@ -1,0 +1,294 @@
+<html lang="es"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Testigos Publicitarios - Scotiabank</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #f8fafc; color: #1e293b; padding: 24px;
+    }
+    .header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+    }
+    .title-area h1 { font-size: 22px; font-weight: 700; color: #0f172a; }
+    .badge-live { font-size: 11px; background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 12px; font-weight: 600; }
+    .subtitle { font-size: 13px; color: #64748b; margin-top: 4px; }
+    
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .kpi-card { background: #ffffff; padding: 16px 20px; border-radius: 10px; border: 1px solid #e2e8f0; }
+    .kpi-label { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+    .kpi-value { font-size: 22px; font-weight: 700; color: #0f172a; margin-top: 6px; }
+
+    .toolbar { display: flex; justify-content: space-between; margin-bottom: 16px; gap: 12px; }
+    .search-box { padding: 9px 14px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 14px; width: 100%; max-width: 320px; }
+
+    .table-container { background: #ffffff; border-radius: 10px; border: 1px solid #e2e8f0; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+    thead tr { background-color: #f1f5f9; border-bottom: 1px solid #e2e8f0; color: #475569; font-weight: 600; }
+    th, td { padding: 14px 18px; }
+    tbody tr { border-bottom: 1px solid #f1f5f9; }
+    tbody tr:hover { background-color: #f8fafc; }
+
+    .thumb-wrapper {
+      width: 80px; height: 52px; border-radius: 6px; overflow: hidden; border: 1px solid #cbd5e1;
+      background: #0f172a; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center;
+    }
+    .thumb-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+    .play-overlay {
+      position: absolute; width: 24px; height: 24px; background: rgba(220, 38, 38, 0.9);
+      color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px;
+    }
+
+    .format-tag { font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px; }
+    .format-image { background: #e0f2fe; color: #0369a1; }
+    .format-video { background: #fee2e2; color: #b91c1c; }
+
+    .badge-status { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; background: #dcfce7; color: #15803d; }
+    .btn-link { color: #2563eb; text-decoration: none; font-weight: 600; font-size: 12px; }
+
+    .modal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.85); z-index: 999; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal.active { display: flex; }
+    .modal-content { background: #ffffff; border-radius: 12px; max-width: 850px; width: 100%; overflow: hidden; }
+    .modal-header { padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
+    .modal-body { background: #0f172a; display: flex; justify-content: center; align-items: center; min-height: 400px; }
+    .modal-footer { padding: 12px 20px; background: #f8fafc; display: flex; justify-content: space-between; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="title-area">
+      <h1>Panel de Testigos Publicitarios <span class="badge-live">● Scotiabank Q2</span></h1>
+      <p class="subtitle" id="lastUpdated">Cargando registros...</p>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Total Testigos</div>
+      <div class="kpi-value" id="kpiTotal">-</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Imágenes</div>
+      <div class="kpi-value" id="kpiImages" style="color: #0284c7;">-</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Videos</div>
+      <div class="kpi-value" id="kpiVideos" style="color: #dc2626;">-</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" id="searchInput" class="search-box" placeholder="Buscar por marca, campaña o soporte...">
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Testigo (Clic para ver)</th>
+          <th>Marca</th>
+          <th>Campaña</th>
+          <th>Tipo / Formato</th>
+          <th>Fecha</th>
+          <th>Estado</th>
+          <th>Enlace</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr>
+          <td colspan="7" style="text-align: center; padding: 30px; color: #64748b;">
+            Cargando testigos desde GitHub...
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="modal" id="mediaModal" onclick="closeModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 id="modalTitle" style="font-size: 15px; color: #0f172a;">Vista Previa</h3>
+        <button onclick="closeModal()" style="border:none; background:none; font-size:20px; cursor:pointer;">×</button>
+      </div>
+      <div class="modal-body" id="modalContainer"></div>
+      <div class="modal-footer">
+        <span id="modalDesc" style="color: #64748b;">Detalle</span>
+        <a id="modalExternalLink" class="btn-link" href="#" target="_blank">Abrir archivo original ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Tu enlace exacto de GitHub:
+    const EXACT_GITHUB_CSV = 'https://raw.githubusercontent.com/Victor-diaz-gif/Scotiabank/refs/heads/main/testigos.csv..csv';
+
+    let globalRows = [];
+
+    function parseMediaUrl(rawUrl, rawType) {
+      const type = (rawType || '').toLowerCase().includes('video') ? 'video' : 'image';
+      let viewUrl = rawUrl || '';
+      let thumbUrl = rawUrl || '';
+
+      if (rawUrl && rawUrl.includes('drive.google.com')) {
+        const match = rawUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        if (match && match[1]) {
+          const driveId = match[1];
+          thumbUrl = `https://drive.google.com/thumbnail?id=${driveId}&sz=w800`;
+          viewUrl = (type === 'video')
+            ? `https://drive.google.com/file/d/${driveId}/preview`
+            : `https://drive.google.com/thumbnail?id=${driveId}&sz=w1200`;
+        }
+      }
+      return { type, viewUrl, thumbUrl, originalUrl: rawUrl };
+    }
+
+    function parseCSV(text) {
+      const lines = text.trim().split(/\r?\n/);
+      if (lines.length === 0) return [];
+
+      return lines.map(line => {
+        const row = [];
+        let insideQuote = false;
+        let entry = '';
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+          if (char === '"') {
+            insideQuote = !insideQuote;
+          } else if (char === ',' && !insideQuote) {
+            row.push(entry.trim());
+            entry = '';
+          } else {
+            entry += char;
+          }
+        }
+        row.push(entry.trim());
+        return row;
+      });
+    }
+
+    async function loadData() {
+      try {
+        const res = await fetch(EXACT_GITHUB_CSV + '?t=' + new Date().getTime());
+        if (!res.ok) throw new Error("Error HTTP al obtener el archivo: " + res.status);
+        const text = await res.text();
+        const parsedRows = parseCSV(text);
+
+        // Si la primera fila son títulos, la omitimos
+        const dataRows = (parsedRows.length > 0 && String(parsedRows[0][0]).toLowerCase().includes('marca'))
+          ? parsedRows.slice(1)
+          : parsedRows;
+
+        globalRows = dataRows.filter(cols => cols.length >= 2 && cols[0] !== '').map((cols, idx) => {
+          // Busca inteligentemente cuál columna contiene el enlace web
+          const foundUrl = cols.find(c => c.startsWith('http')) || cols[5] || '';
+          const foundType = cols[2] || (foundUrl.toLowerCase().includes('video') ? 'video' : 'image');
+          const media = parseMediaUrl(foundUrl, foundType);
+
+          return {
+            marca: cols[0] || ('Testigo ' + (idx + 1)),
+            campana: cols[1] || 'Campaña Scotiabank',
+            tipo: media.type,
+            formato: cols[3] || 'Digital',
+            fecha: cols[4] || '',
+            estado: cols[6] || 'Verificado',
+            media: media
+          };
+        });
+
+        renderTable(globalRows);
+        updateKPIs(globalRows);
+        document.getElementById('lastUpdated').textContent = `Sincronizado: ${new Date().toLocaleTimeString()} • ${globalRows.length} registros cargados`;
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById('tableBody').innerHTML = `
+          <tr><td colspan="7" style="text-align: center; padding: 30px; color: #dc2626;">
+            ❌ Error al cargar los datos desde GitHub.<br>
+            <span style="font-size:12px; color:#64748b;">Comprueba que el repositorio Scotiabank esté en modo Público.</span>
+          </td></tr>`;
+      }
+    }
+
+    function renderTable(dataList) {
+      const tbody = document.getElementById('tableBody');
+      if (dataList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 24px; color: #64748b;">No se encontraron registros.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = dataList.map(row => `
+        <tr>
+          <td>
+            <div class="thumb-wrapper" onclick="openModal('${row.tipo}', '${row.marca}', '${row.media.viewUrl}', '${row.media.originalUrl}')">
+              <img src="${row.media.thumbUrl}" alt="${row.marca}" onerror="this.src='https://placehold.co/80x52?text=Sin+Foto'">
+              ${row.tipo === 'video' ? '<div class="play-overlay">▶</div>' : ''}
+            </div>
+            <span class="format-tag ${row.tipo === 'video' ? 'format-video' : 'format-image'}">
+              ${row.tipo === 'video' ? '🎬 Video' : '🖼️ Imagen'}
+            </span>
+          </td>
+          <td><strong>${row.marca}</strong></td>
+          <td>${row.campana}</td>
+          <td>${row.formato}</td>
+          <td>${row.fecha}</td>
+          <td><span class="badge-status">${row.estado}</span></td>
+          <td><a class="btn-link" href="${row.media.originalUrl}" target="_blank">Abrir ↗</a></td>
+        </tr>
+      `).join('');
+    }
+
+    function updateKPIs(dataList) {
+      document.getElementById('kpiTotal').textContent = dataList.length;
+      document.getElementById('kpiImages').textContent = dataList.filter(d => d.tipo === 'image').length;
+      document.getElementById('kpiVideos').textContent = dataList.filter(d => d.tipo === 'video').length;
+    }
+
+    function openModal(type, title, viewUrl, originalUrl) {
+      document.getElementById('modalTitle').textContent = 'Testigo: ' + title;
+      document.getElementById('modalExternalLink').href = originalUrl;
+      const container = document.getElementById('modalContainer');
+      container.innerHTML = '';
+
+      if (type === 'video') {
+        const iframe = document.createElement('iframe');
+        iframe.src = viewUrl;
+        iframe.style.width = '100%';
+        iframe.style.height = '460px';
+        iframe.style.border = 'none';
+        iframe.allow = 'autoplay; fullscreen';
+        container.appendChild(iframe);
+      } else {
+        const img = document.createElement('img');
+        img.src = viewUrl;
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '65vh';
+        img.style.objectFit = 'contain';
+        container.appendChild(img);
+      }
+      document.getElementById('mediaModal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('modalContainer').innerHTML = '';
+      document.getElementById('mediaModal').classList.remove('active');
+    }
+
+    document.getElementById('searchInput').addEventListener('keyup', (e) => {
+      const term = e.target.value.toLowerCase();
+      const filtered = globalRows.filter(r => 
+        (r.marca && String(r.marca).toLowerCase().includes(term)) ||
+        (r.campana && String(r.campana).toLowerCase().includes(term)) ||
+        (r.formato && String(r.formato).toLowerCase().includes(term))
+      );
+      renderTable(filtered);
+    });
+
+    loadData();
+  </script>
+
+</body></html>

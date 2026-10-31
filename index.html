@@ -1,4 +1,4 @@
-<html data-type="html" data-identifier="4c28f3bb-81ef-42d8-9dfb-d0ba759d57a2" data-title="Competitive Landscape &amp; Testigos Scotiabank 2026" data-version="3" width="1240" height="920"><head>
+<html data-type="html" data-identifier="4c28f3bb-81ef-42d8-9dfb-d0ba759d57a2" data-title="Competitive Landscape &amp; Testigos Scotiabank 2026" data-version="6" width="1240" height="920"><head>
   <meta charset="UTF-8">
   <title>Competitive Landscape &amp; Testigos - Scotiabank 2026</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -458,6 +458,11 @@
       font-weight: 500;
     }
 
+    .panel-select:focus {
+      border-color: #ec111a;
+      box-shadow: 0 0 0 2px rgba(236,17,26,0.1);
+    }
+
     .trend-toggle-group {
       display: inline-flex;
       background: #f1f5f9;
@@ -523,6 +528,41 @@
       width: 100%;
     }
 
+    /* ESTILO NATIVO DEL TREEMAP (TOTAL Y SIN DEPENDENCIAS) */
+    .treemap-canvas-container {
+      position: relative;
+      width: 100%;
+      height: 420px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+    }
+
+    #treemapCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: default;
+    }
+
+    .treemap-floating-tooltip {
+      position: absolute;
+      display: none;
+      pointer-events: none;
+      background: rgba(15, 23, 42, 0.95);
+      color: #ffffff;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 50;
+      white-space: nowrap;
+      transition: opacity 0.1s ease;
+    }
+
+    /* Tabla */
     .table-panel {
       background: #ffffff;
       border: 1px solid #e2e8f0;
@@ -747,6 +787,9 @@
       </button>
       <button type="button" class="nav-tab-btn" id="tab-btn-testigos">
         <span>🎬 Testigos</span>
+      </button>
+      <button type="button" class="nav-tab-btn" id="tab-btn-resumen">
+        <span>📋 Resumen Detallado</span>
       </button>
     </div>
 
@@ -982,29 +1025,27 @@
         </div>
       </div>
 
-      <div class="table-panel">
-        <div class="panel-header">
-          <div class="panel-header-titles">
-            <h3>Resumen Detallado por Marca y Quarter (Q1, Q2, Q3 2026)</h3>
-            <p>Cifras en millones de pesos ($M MXN)</p>
+      <!-- TREEMAP NATIVO TOTAL DE PRODUCTOS POR MARCA -->
+      <div class="charts-grid">
+        <div class="chart-panel" style="grid-column: span 2;">
+          <div class="panel-header">
+            <div class="panel-header-titles">
+              <h2>Mapeo Total de Productos por Marca (Treemap)</h2>
+              <p>Visualización cualitativa total de productos comunicados en el mercado (sin cifras de inversión)</p>
+            </div>
+            <div class="panel-header-controls">
+              <label for="treemap-brand-filter">Filtrar Marca:</label>
+              <select id="treemap-brand-filter" class="panel-select">
+                <option value="ALL" selected="">Todas las Marcas (Total)</option>
+              </select>
+            </div>
           </div>
-        </div>
-        <div class="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>Marca</th>
-                <th>Clasificación</th>
-                <th>Q1 2026</th>
-                <th>Q2 2026</th>
-                <th>Q3 2026</th>
-                <th>Total Inversión</th>
-                <th>SOI %</th>
-                <th>Medio Principal</th>
-              </tr>
-            </thead>
-            <tbody id="table-body"></tbody>
-          </table>
+
+          <!-- Contenedor Nativo Treemap -->
+          <div class="treemap-canvas-container" id="treemapContainer">
+            <canvas id="treemapCanvas"></canvas>
+            <div class="treemap-floating-tooltip" id="treemapTooltip"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1082,12 +1123,40 @@
         </div>
       </div>
     </div>
+
+    <!-- PESTAÑA 3: RESUMEN DETALLADO -->
+    <div class="tab-content" id="tab-content-resumen">
+      <div class="table-panel">
+        <div class="panel-header">
+          <div class="panel-header-titles">
+            <h3>Resumen Detallado por Marca y Quarter (Q1, Q2, Q3 2026)</h3>
+            <p>Cifras en millones de pesos ($M MXN)</p>
+          </div>
+        </div>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Marca</th>
+                <th>Clasificación</th>
+                <th>Q1 2026</th>
+                <th>Q2 2026</th>
+                <th>Q3 2026</th>
+                <th>Total Inversión</th>
+                <th>SOI %</th>
+                <th>Medio Principal</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
     const GITHUB_CSV_URL = "https://raw.githubusercontent.com/Victor-diaz-gif/Scotiabank/refs/heads/main/Base%20Scotiabank.csv";
 
-    // URLs potenciales para el archivo de testigos en GitHub
     const TESTIGOS_URLS = [
       "https://raw.githubusercontent.com/Victor-diaz-gif/Scotiabank/refs/heads/main/testigos.csv.",
       "https://raw.githubusercontent.com/Victor-diaz-gif/Scotiabank/refs/heads/main/testigos.csv",
@@ -1108,6 +1177,9 @@
     let trendViewMode = 'BRANDS';
     let mediaMixViewMode = 'ABS';
     let filterMundialActive = false;
+
+    // Estructura de cajas calculadas para el Treemap
+    let computedTreemapBoxes = [];
 
     function formatMillions(val) {
       if (typeof val !== 'number' || isNaN(val)) return '0.0';
@@ -1391,6 +1463,8 @@
               const typeRaw = String(findColumnValue(row, /^type$/) || findColumnValue(row, /tipo.*formato|formato/) || 'Otros').trim();
               const descRaw = String(findColumnValue(row, /^descrip/) || '').trim();
 
+              const prodRaw = String(findColumnValue(row, /^producto$/) || findColumnValue(row, /^prod$/) || 'Institucional').trim();
+
               const descNorm = descRaw.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
               const isMundial = descNorm.includes('fifa') || descNorm.includes('mundial') || descNorm.includes('world cup');
 
@@ -1404,6 +1478,7 @@
                 medio: medio || 'Otros',
                 tipoMedio: tipoMedio.includes('ON') ? 'ON' : 'OFF',
                 type: typeRaw || 'Otros',
+                producto: prodRaw || 'General',
                 canal: broadcastChannelName,
                 desc: descRaw,
                 isMundial: isMundial,
@@ -1486,6 +1561,15 @@
         opt.value = b;
         opt.textContent = `${b} ${b.toLowerCase().includes('scotiabank') ? '(Cliente)' : ''}`;
         compSelect.appendChild(opt);
+      });
+
+      const treemapBrandSelect = document.getElementById('treemap-brand-filter');
+      treemapBrandSelect.innerHTML = '<option value="ALL" selected>Todas las Marcas (Total)</option>';
+      marcasOrdenadas.forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b;
+        opt.textContent = b;
+        treemapBrandSelect.appendChild(opt);
       });
     }
 
@@ -1764,6 +1848,218 @@
       renderBroadcastDetailChart(broadcastChannelTotals, selectedBroadcastMedium);
       renderTypeChart(typeTotals, grandTotal, selectedTypeMedia);
       renderTable(aggregatedBrands, grandTotal);
+
+      // Renderizar Treemap Nativo Total
+      renderNativeTreemap(filtered);
+    }
+
+    // ==============================================================
+    // ALGORITMO SQUARIFY NATIVO PARA TREEMAP TOTAL
+    // ==============================================================
+    function squarifyLayout(data, x, y, width, height) {
+      if (!data || data.length === 0 || width <= 0 || height <= 0) return [];
+      const items = data.filter(d => d.value > 0).sort((a, b) => b.value - a.value);
+      if (items.length === 0) return [];
+
+      const totalVal = items.reduce((s, d) => s + d.value, 0);
+      const totalArea = width * height;
+      const areas = items.map(d => ({ ...d, _area: (d.value / totalVal) * totalArea }));
+      const results = [];
+
+      const worstRatio = (row, w) => {
+        if (row.length === 0 || w <= 0) return Infinity;
+        let minA = Infinity, maxA = 0, sumA = 0;
+        for (let i = 0; i < row.length; i++) {
+          const a = row[i]._area;
+          if (a < minA) minA = a;
+          if (a > maxA) maxA = a;
+          sumA += a;
+        }
+        const w2 = w * w;
+        const sum2 = sumA * sumA;
+        return Math.max((w2 * maxA) / sum2, sum2 / (w2 * minA));
+      };
+
+      const layoutRow = (row, rect) => {
+        const sumA = row.reduce((s, i) => s + i._area, 0);
+        if (rect.width >= rect.height) {
+          const rowW = sumA / rect.height;
+          let curY = rect.y;
+          for (let i = 0; i < row.length; i++) {
+            const itemH = row[i]._area / rowW;
+            results.push({ ...row[i], x: rect.x, y: curY, width: rowW, height: itemH });
+            curY += itemH;
+          }
+          return { x: rect.x + rowW, y: rect.y, width: Math.max(0, rect.width - rowW), height: rect.height };
+        } else {
+          const rowH = sumA / rect.width;
+          let curX = rect.x;
+          for (let i = 0; i < row.length; i++) {
+            const itemW = row[i]._area / rowH;
+            results.push({ ...row[i], x: curX, y: rect.y, width: itemW, height: rowH });
+            curX += itemW;
+          }
+          return { x: rect.x, y: rect.y + rowH, width: rect.width, height: Math.max(0, rect.height - rowH) };
+        }
+      };
+
+      let curRect = { x, y, width, height };
+      let curRow = [];
+
+      for (let i = 0; i < areas.length; i++) {
+        const item = areas[i];
+        const w = Math.max(0, Math.min(curRect.width, curRect.height));
+        const ratioWith = worstRatio([...curRow, item], w);
+        const ratioWithout = worstRatio(curRow, w);
+
+        if (curRow.length === 0 || ratioWith <= ratioWithout) {
+          curRow.push(item);
+        } else {
+          curRect = layoutRow(curRow, curRect);
+          curRow = [item];
+        }
+      }
+      if (curRow.length > 0) layoutRow(curRow, curRect);
+      return results;
+    }
+
+    // DIBUJAR TREEMAP NATIVO EN CANVAS (TOTAL Y SIN CIFRAS)
+    function renderNativeTreemap(records) {
+      const canvas = document.getElementById('treemapCanvas');
+      const container = document.getElementById('treemapContainer');
+      if (!canvas || !container) return;
+
+      const rect = container.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const w = rect.width || 1150;
+      const h = 420;
+
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      const selBrand = document.getElementById('treemap-brand-filter').value;
+      let filtered = records;
+      if (selBrand !== 'ALL') {
+        filtered = records.filter(r => r.brand === selBrand);
+      }
+
+      // Agrupar apariciones por Marca y Producto
+      const counts = {};
+      filtered.forEach(r => {
+        const b = r.brand || 'Otros';
+        const p = r.producto || 'Institucional';
+        const key = `${b}|||${p}`;
+        counts[key] = (counts[key] || 0) + 1;
+      });
+
+      const items = Object.entries(counts).map(([k, c]) => {
+        const [brand, producto] = k.split('|||');
+        return {
+          brand: brand,
+          producto: producto,
+          value: c // Conteo para dimensionar
+        };
+      });
+
+      if (items.length === 0) {
+        ctx.fillStyle = "#64748b";
+        ctx.font = "14px -apple-system, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Sin datos de producto para el filtro seleccionado", w / 2, h / 2);
+        computedTreemapBoxes = [];
+        return;
+      }
+
+      // Paleta corporativa fija por marca
+      const brandColorsMap = {
+        'Scotiabank': '#ec111a',
+        'Banamex': '#0284c7',
+        'BBVA': '#004481',
+        'Azteca': '#10b981',
+        'Santander': '#e11d48',
+        'Mercado Pago': '#0369a1',
+        'Nu': '#8b5cf6',
+        'Banorte': '#ea580c',
+        'BanCoppel': '#ca8a04',
+        'Clip': '#f59e0b',
+        'Kueski': '#14b8a6'
+      };
+      const fallbackPalette = ['#2563eb', '#16a34a', '#d97706', '#9333ea', '#0891b2', '#4f46e5', '#be123c'];
+
+      // Calcular posiciones con Squarify
+      const boxes = squarifyLayout(items, 0, 0, w, h);
+      computedTreemapBoxes = boxes;
+
+      ctx.clearRect(0, 0, w, h);
+
+      boxes.forEach(box => {
+        const color = brandColorsMap[box.brand] || fallbackPalette[Math.abs(box.brand.length) % fallbackPalette.length];
+        
+        // Rectángulo con borde blanco sutil
+        ctx.fillStyle = color;
+        ctx.fillRect(box.x, box.y, box.width, box.height);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+        // Texto cualitativo (Producto y Marca) - CERO CIFRAS
+        if (box.width > 55 && box.height > 25) {
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'top';
+
+          ctx.font = 'bold 11px -apple-system, sans-serif';
+          const maxTextW = box.width - 12;
+          
+          let prodText = box.producto;
+          if (ctx.measureText(prodText).width > maxTextW) {
+            prodText = prodText.substring(0, Math.floor(maxTextW / 7)) + '...';
+          }
+          ctx.fillText(prodText, box.x + 6, box.y + 6);
+
+          if (box.height > 44 && selBrand === 'ALL') {
+            ctx.font = '500 10px -apple-system, sans-serif';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+            ctx.fillText(box.brand, box.x + 6, box.y + 22);
+          }
+        }
+      });
+    }
+
+    // Tooltip flotante nativo para el Treemap
+    function setupTreemapInteractions() {
+      const container = document.getElementById('treemapContainer');
+      const tooltip = document.getElementById('treemapTooltip');
+      if (!container || !tooltip) return;
+
+      container.addEventListener('mousemove', (e) => {
+        const rect = container.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const hit = computedTreemapBoxes.find(b => 
+          mouseX >= b.x && mouseX <= b.x + b.width &&
+          mouseY >= b.y && mouseY <= b.y + b.height
+        );
+
+        if (hit) {
+          tooltip.style.display = 'block';
+          tooltip.innerHTML = `Marca: ${hit.brand} &nbsp;|&nbsp; Producto: ${hit.producto}`;
+          tooltip.style.left = `${Math.min(mouseX + 14, rect.width - 220)}px`;
+          tooltip.style.top = `${Math.max(mouseY - 32, 10)}px`;
+        } else {
+          tooltip.style.display = 'none';
+        }
+      });
+
+      container.addEventListener('mouseleave', () => {
+        tooltip.style.display = 'none';
+      });
     }
 
     function resetAllFilters() {
@@ -1774,6 +2070,7 @@
       document.getElementById('competitor-filter').value = 'ALL';
       document.getElementById('type-media-filter').value = 'ALL';
       document.getElementById('broadcast-medium-selector').value = 'ALL';
+      document.getElementById('treemap-brand-filter').value = 'ALL';
 
       filterMundialActive = false;
       const btnMundial = document.getElementById('btn-mundial-filter');
@@ -2289,7 +2586,6 @@
       });
     }
 
-    // CARGA DE TESTIGOS CON REINTENTO AUTOMÁTICO DE URL
     function tryLoadTestigos(urlIndex) {
       if (urlIndex >= TESTIGOS_URLS.length) {
         console.warn("No se pudo cargar el archivo remoto de testigos, usando muestra local.");
@@ -2458,30 +2754,43 @@
     window.addEventListener('load', () => {
       cargarBaseDesdeGitHub();
       initTestigosModule();
+      setupTreemapInteractions();
 
       const btnTabLandscape = document.getElementById('tab-btn-landscape');
       const btnTabTestigos = document.getElementById('tab-btn-testigos');
+      const btnTabResumen = document.getElementById('tab-btn-resumen');
+
       const contentLandscape = document.getElementById('tab-content-landscape');
       const contentTestigos = document.getElementById('tab-content-testigos');
+      const contentResumen = document.getElementById('tab-content-resumen');
+
       const dashTitle = document.getElementById('main-dash-title');
       const dashSubtitle = document.getElementById('main-dash-subtitle');
 
+      function switchTab(activeBtn, activeContent, title, subtitle) {
+        [btnTabLandscape, btnTabTestigos, btnTabResumen].forEach(b => b.classList.remove('active'));
+        [contentLandscape, contentTestigos, contentResumen].forEach(c => c.classList.remove('active'));
+
+        activeBtn.classList.add('active');
+        activeContent.classList.add('active');
+        dashTitle.textContent = title;
+        dashSubtitle.textContent = subtitle;
+
+        if (activeBtn === btnTabLandscape) {
+          setTimeout(() => applyFilters(), 50);
+        }
+      }
+
       btnTabLandscape.addEventListener('click', () => {
-        btnTabLandscape.classList.add('active');
-        btnTabTestigos.classList.remove('active');
-        contentLandscape.classList.add('active');
-        contentTestigos.classList.remove('active');
-        dashTitle.textContent = "Competitive Landscape";
-        dashSubtitle.textContent = "Análisis de Inversión Publicitaria por Marcas y Medios";
+        switchTab(btnTabLandscape, contentLandscape, "Competitive Landscape", "Análisis de Inversión Publicitaria por Marcas y Medios");
       });
 
       btnTabTestigos.addEventListener('click', () => {
-        btnTabTestigos.classList.add('active');
-        btnTabLandscape.classList.remove('active');
-        contentTestigos.classList.add('active');
-        contentLandscape.classList.remove('active');
-        dashTitle.textContent = "Testigos";
-        dashSubtitle.textContent = "Monitoreo y Reproducción Multimedia de Pauta Auditsa";
+        switchTab(btnTabTestigos, contentTestigos, "Testigos", "Monitoreo y Reproducción Multimedia de Pauta Auditsa");
+      });
+
+      btnTabResumen.addEventListener('click', () => {
+        switchTab(btnTabResumen, contentResumen, "Resumen Detallado", "Inversión por Marca y Quarter (Q1, Q2, Q3 2026)");
       });
 
       document.getElementById('quarter-filter').addEventListener('change', applyFilters);
@@ -2491,6 +2800,11 @@
       document.getElementById('competitor-filter').addEventListener('change', applyFilters);
       document.getElementById('type-media-filter').addEventListener('change', applyFilters);
       document.getElementById('broadcast-medium-selector').addEventListener('change', applyFilters);
+
+      // Evento de cambio en el selector de Marca del Treemap
+      document.getElementById('treemap-brand-filter').addEventListener('change', () => {
+        applyFilters();
+      });
 
       const btnMundial = document.getElementById('btn-mundial-filter');
       btnMundial.addEventListener('click', () => {
@@ -2547,6 +2861,12 @@
         document.getElementById('t-medio-filter').value = "";
         document.getElementById('t-marca-filter').value = "";
         renderTestigosTable();
+      });
+
+      window.addEventListener('resize', () => {
+        if (contentLandscape.classList.contains('active')) {
+          applyFilters();
+        }
       });
     });
   </script>
